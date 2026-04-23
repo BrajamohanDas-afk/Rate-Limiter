@@ -70,16 +70,32 @@ Mention what is covered:
 - Constraints documented in `ai-guidance/`.
 - Manual review focused on correctness and architecture boundaries.
 
-## 9) Risks and Next Extensions (1 minute)
+## 9) Risks, Tradeoffs, and Next Extensions (1-2 minutes)
 
-Current risks:
-- fixed-window burst behavior
-- no distributed atomic counter
-- plaintext demo API keys
-- unbounded log growth
+### Known Weaknesses
 
-Next changes (minimal impact path):
-- swap to sliding window in one service function
-- move counters to Redis
-- hash API keys
-- add log retention job
+**Fixed-window boundary burst**
+The biggest algorithmic weakness. A client with a limit of 60 req/min can burst
+120 requests by firing 60 at 11:59 and 60 at 12:00 — both windows are clean.
+Fix: replace `_count_requests_in_window()` in `rate_limiter.py` with a sliding
+window log (query logs in the last N seconds instead of since window start).
+Nothing else changes.
+
+**No distributed atomic counter**
+Two simultaneous requests at the exact window boundary could both pass the check
+before either writes a log. Fine for single-process deployments; fix with Redis
+INCR + EXPIRE or Postgres advisory locks for multi-instance.
+
+**API keys stored in plaintext**
+Fine for a demo. Production fix: store bcrypt hash, compare on each request.
+Adds ~50ms latency per request — acceptable.
+
+**Unbounded request log growth**
+Logs are never pruned. Fix: a scheduled job deleting logs older than 24h.
+No schema changes required.
+
+### What I'd do next (in order of impact)
+1. Sliding window — one function swap, highest correctness gain
+2. Log pruning job — prevents eventual DB bloat
+3. Redis counters — only needed at multi-instance scale
+4. Key hashing — security hardening before any production use
