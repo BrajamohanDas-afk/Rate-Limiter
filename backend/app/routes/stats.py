@@ -80,7 +80,9 @@ def timeline():
 @stats_bp.route("/clients/<int:client_id>", methods=["GET"])
 def client_stats(client_id: int):
     """Per-client stats for the last 60 minutes."""
-    client = Client.query.get_or_404(client_id)
+    client = db.session.get(Client, client_id)
+    if client is None:
+        return jsonify({"error": "Client not found"}), 404
     since = datetime.now(timezone.utc) - timedelta(minutes=60)
 
     logs = (

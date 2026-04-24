@@ -4,6 +4,7 @@ venv/
 .env
 *.db
 instance/
+backend/instance/
 migrations/
 
 node_modules/

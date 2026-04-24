@@ -15,7 +15,7 @@ def make_shell_context():
 
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()
+        db.create_all()  # Dev shortcut — use `flask db upgrade` in production.
     app.run(
         debug=os.environ.get("FLASK_ENV", "development") == "development",
         port=int(os.environ.get("FLASK_RUN_PORT", "5000")),

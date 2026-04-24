@@ -72,13 +72,17 @@ def create_client():
 
 @clients_bp.route("/<int:client_id>", methods=["GET"])
 def get_client(client_id: int):
-    client = Client.query.get_or_404(client_id)
+    client = db.session.get(Client, client_id)
+    if client is None:
+        return jsonify({"error": "Client not found"}), 404
     return jsonify(client.to_dict()), 200
 
 
 @clients_bp.route("/<int:client_id>", methods=["PATCH"])
 def update_client(client_id: int):
-    client = Client.query.get_or_404(client_id)
+    client = db.session.get(Client, client_id)
+    if client is None:
+        return jsonify({"error": "Client not found"}), 404
     data = request.get_json(silent=True)
     if data is None:
         data = {}
@@ -116,7 +120,9 @@ def update_client(client_id: int):
 
 @clients_bp.route("/<int:client_id>", methods=["DELETE"])
 def delete_client(client_id: int):
-    client = Client.query.get_or_404(client_id)
+    client = db.session.get(Client, client_id)
+    if client is None:
+        return jsonify({"error": "Client not found"}), 404
     db.session.delete(client)
     db.session.commit()
     return "", 204
